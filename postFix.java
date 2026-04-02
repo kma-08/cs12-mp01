@@ -141,6 +141,4 @@ public class postFix {
 			default: return 0;
 		}
 	}
-	
-	
 }
