@@ -1,75 +1,79 @@
 import java.util.Stack;
 import java.util.EmptyStackException;
+import java.lang.ArrayIndexOutOfBoundsException;
 
+
+ //String operators = "^*/%+-";
+ //String numbers = ".0123456789";
+//beh di ko napansin kanina hindi to pwedeng instance variables dahil hindi siya state considered sha as bad practice,
+//so kahit pwede mo siyang gawin, hindi siya pasok sa oop
+
+//nahandle ba natin yung kapag may inenter kunyari na $% unknown na characters in general?
 /*
- Unresolved: 
- (1+)*2
+ problem pa
+ if yung testdrive ng user is sunod sunod na
+ like
+ postFix myconverter = new postFix();
+		
+		myconverter.setInfix("1.2+(2.5-3.567)*4.8901ˆ2");
+		
+		System.out.println(myconverter.getInfix());
+		
+		System.out.println(myconverter.infix2postfix());
+		
+		System.out.println(myconverter.showPostfix());
+ lahat yan maglalagay ng error. So ang ginawa ko naglagay na lang ako return message pag hindi naset nang ayos yung infix. di ko alam pano modify yung sa evaluate
+ Mga di pa gumagana:
+ 1.2+(2.5-3.(5)67)*4.8901^2
+ 1.2+(2.5-3.567)(*)4.8901^2
+ 
+ Iniisip ko kung dapat sa getInfix ba return ng error msg or dapat sa set pa lang mag return na 
+ 
+ After natin matapos, ayusin natin readability tsaka add helpful comments
  */
 
 //1. Java Class named postFix
 public class postFix {
-	private Stack<Character> tokenContainer;
-	private String infix;
-	private String postfix;
-	private boolean errorDetected = false;
-	private String errorMsg = "";
+	private Stack<Character> tokenContainer;//1. Empty stack of operators
+	private String infix; //input
+	private String postfix; //output
+	private boolean errorDetected = false; //error checker
+	private String errorMsg = ""; //output error
+	private int ctr; //represents the current index
 	
-	
-	//Public constructors
-	public postFix() {
-		this.infix = "";
-	}
-	
-	public postFix(String infix) { 
-		setInfix(infix);
-	}
-	
+
 	//2. setInfix(String)
-	public void setInfix(String infix) { 
-		errorDetected = false;
-		errorMsg = "";
-		postfix = "";
-		String operators = "^*/%+-";
+	public String setInfix(String infix) { 
+		errorMsg = errorChecking(infix); //if walang error, mag rreturn ng null string, if may error yung errorMsg ibabalik
 		
-		int returnVal = checkInfix(infix, operators);
-		
-		switch (returnVal){
-			case 0:
-				this.infix = infix.replace(" ", ""); 
-				errorMsg = "";
-				break;
-			case -1: 
-				errorDetected = true;
-				errorMsg = "Error: Invalid expression!"; //is this too vague?
-				break;
-			case -2:
-				errorDetected = true;
-				errorMsg = "Error: Missing Operand"; 
-				break;
-			default:
-				errorDetected = true;
-				errorMsg = "Error: Unbalanced Parentheses!";
-				break;
+		if(errorMsg.equals("")) { //if null string, ibig sabihin walang error, pwede na iassign yung infix na pinasok
+			this.infix = infix;
 		}
+		else {
+			errorDetected = true; //nilagay ko pa rin para hindi mainvoke yung infix2postfix
+		}
+		return errorMsg; //regardless if errorMsg or null string, ireturn pa rin since if null string wla lang naman un
 	}
-	
 	//3. getInfix()
 	public String getInfix() { 
-		return this.infix;
+		if(errorDetected == false) {
+			return this.infix;
+		}
+		else return errorMsg;
 	}
 	
 	//4. infix2postfix()
 	public String infix2postfix(){ 
 		
 		if(errorDetected) {
-			return errorMsg;
+			return "You can't invoke this method yet. Set your infix properly.";
 		}
 		
 		tokenContainer = new Stack<>(); 
 		postfix = "";
 		String operators = "^*/%+-";
 		String nums = ".,0123456789";
-		int ctr=0;
+		ctr=0;
 		
 		//Note that the numbering indicated in this part are based on the provided general algorithm of converting an infix expression to a postfix expression.
 		
@@ -77,6 +81,11 @@ public class postFix {
 			
 			//2.a
 			Character nextInput = infix.charAt(ctr); 
+			
+			if(Character.isWhitespace(nextInput)){
+				ctr++;
+				continue;
+			}
 			
 			//2.b.i & 2.b.ii: Handling Parentheses
 			if(nextInput.equals('(') || nextInput.equals(')')) {
@@ -91,35 +100,30 @@ public class postFix {
 			}
 			
 			//2.b.iv: Handling Operands
-			else if(nums.contains(String.valueOf(nextInput))){
-				StringBuilder cont = new StringBuilder(); //found in the API to be efficient when dealing w/ building Characters to String. 
-				String operand;
-				
-				while(ctr < infix.length() && nums.contains(String.valueOf(infix.charAt(ctr)))) {
-					cont.append(infix.charAt(ctr));
-					ctr++;
-				}
-				operand = cont.toString();
-				if(operand.contains(".") || operand.contains(",")){
-					operand = checkOperand(operand);
-				}
-
-				if (errorDetected) return errorMsg;
-
+			else if(nums.contains(String.valueOf(nextInput))){ 
+				/*
+				 Kasi ang problem ko rito pede namang yung error checking ng operand is maexecute rin errorChecking method
+				 kaso ang original problem nga natin dun ay hindi natin naextract nang ayos yung operand. So ang need gawin:
+				 
+				 1. Extract muna operand
+				 2. Kada operand ichceck.
+				 
+				 So madali lang naman mag add ng pag extract ng operands, icopypaste ko lang yung nandiro originally.
+				 Ang problema ay panget dahil may duplicate code, lalo hahaba. tas naisip ko gagi pede naman nga 
+				 kasing gumawa na lang ng method na magbubuild ng operands. So tawag na lang dito tas tawag din sa errorChecking.
+				 
+				 
+				 */
+				String operand = buildOperand(infix, nums, ctr);
 				postfix += operand + " ";
+				ctr += operand.length();
 				
 			}
 			
-			//Handles Unknown Input Token ("umbrella error handling" so it captures unknown operators as well)
-			else if(!nums.contains(String.valueOf(nextInput)) && 
-			        !operators.contains(String.valueOf(nextInput)) && 
-			        !nextInput.equals('(') && 
-			        !nextInput.equals(')')) {
-				
-				errorDetected = true;
-				errorMsg = "Error: Unknown Input Token!";
-				return errorMsg;
+			else {
+			    ctr++; 
 			}
+			
 			
 		} //end while
 		
@@ -130,43 +134,72 @@ public class postFix {
 		if(errorDetected) {
 			return errorMsg;
 		}
+		
 		return postfix;
 		
 	} //end infix2postfix
 	
+	//5. showPostfix
 	public String showPostfix() {
+		
+		if(errorDetected) {
+			return "You can't invoke this method yet. Set your infix properly.";
+		}
+		
+		System.out.println(this.postfix);
 		return this.postfix;
 	}
 	
+	//6. evaluatePostfix()
+	public double evaluatepostfix() {
+		
+		//if(errorDetected) {
+			//return "You can't invoke this method yet. Set your infix properly.";
+		//}
+		
+		Stack <Double> postContainer = new Stack <>();
+		
+		String[] tokens = this.postfix.trim().split("\\s+");// yung \s=any whitespace \s+ = split by one or more spaces kaya double \\ kasi special character si \
+		
+		for (int i = 0; i < tokens.length; i++) {
+		    String token = tokens[i];
+
+		    try {
+		        double num = Double.parseDouble(token);
+		        postContainer.push(num);
+		    } catch (NumberFormatException e) {
+		        double b = postContainer.pop();
+		        double a = postContainer.pop();
+
+		        switch (token) {
+		            case "+": postContainer.push(a + b); break;
+		            case "-": postContainer.push(a - b); break;
+		            case "*": postContainer.push(a * b); break;
+		            case "/": postContainer.push(a / b); break;
+		            case "%": postContainer.push(a % b); break;
+		            case "^": postContainer.push(Math.pow(a, b)); break;
+		        }
+		    }
+		}
+		
+		return postContainer.pop();
+	}
+	
+	
+	
+	
 	//helper methods
 	
-	private int checkInfix(String infix, String operators) {
-		int leftParenthesis = 0;
-		int rightParenthesis = 0;
-		
-		for(Character hold: operators.toCharArray()) {
-			if(infix.startsWith("" + hold) || infix.startsWith(")") || infix.endsWith("" + hold)) {
-				return -1;
-			}
-		}
-		
-		for(int i = 0; i<infix.length()-1; i++) {
-			if(operators.contains("" + infix.charAt(i)) && operators.contains("" + infix.charAt(i + 1))){
-				return -2;
-			}
-			if(infix.charAt(i)=='(') {
-				leftParenthesis++;
-			}
-			else if(infix.charAt(i)==')') {
-				rightParenthesis++;
-				
-			}
-		}
-		
-		if(leftParenthesis != rightParenthesis) {
-			return -3;
-		}
-		return 0;
+	private String buildOperand(String infix, String nums, int startIndex) {
+	    StringBuilder cont = new StringBuilder();
+	    int i = startIndex;
+
+	    while (i < infix.length() && nums.contains(String.valueOf(infix.charAt(i)))) {
+	        cont.append(infix.charAt(i));
+	        i++;
+	    }
+
+	    return cont.toString();
 	}
 	
 	private void popThendisplay() {
@@ -194,12 +227,12 @@ public class postFix {
 				tokenContainer.pop(); //Since we want to pop "(", but not display it. We are sure that we will be popping "(" here since by the time that the while construct is over, "(" will be the one on top of the stack.
 			} else {
 				errorDetected = true;
-				errorMsg = "Error: Unbalanced Parentheses!";
+				errorMsg = "Unbalanced Parentheses!"; //need to since ito yung hindi nahandle sa parentheses
 			}
 		}
 	}
 	
-	private void handleOperators(Character nextInput) { //i think may way pa para masimplify toh pero di pa mag sink in sakin
+	private void handleOperators(Character nextInput) { 
 		while (!tokenContainer.isEmpty()) {
 			Character topOfStack = tokenContainer.peek();
 			
@@ -208,7 +241,7 @@ public class postFix {
 		    int topPrec = precedenceChecker(topOfStack);
 		    int currPrec = precedenceChecker(nextInput);
 
-		    if (nextInput.equals('^')) { //since right associative siya
+		    if (nextInput.equals('^')) {
 		    	if (topPrec > currPrec) {
 		    		popThendisplay();
 		        } else break; 
@@ -237,58 +270,150 @@ public class postFix {
 		}
 	}
 	
-	private String checkOperand(String operand) {
+	private String errorChecking(String infix) { //since dapat isang method lang to gawin ko na lang na by blocks yung kada error handling
+		
+		String error = "Error: ";
+		String operators = "^*/%+-";
+		String nums = ".,0123456789";
+		
+	//1. Unbalanced parenthesis in the infix expression.
+		//by order pala dapat yung pag check dito. So kunyari
+		// (8+5)) not valid
+		// ((3+3)*5) valid
+		// 8+3)(+4 not valid
+		//78))+67(( not valid
+		/*
+		 Yung idea is isa lang kailangan natin na counter: kunyari
+		 int ctr = 0;
+		 if na encounter si '(' - mag iincrement
+		 if na encounter si ')' - mag dedecrement
+		 
+		 Habang di pa nag eend yung loop,
+			 Notice na sa mga valid cases, lagi lang shang positive
+			 Pero kapag invalid, nag nenegative sha
+			 
+		Last check: Kapag nag zero yung ctr, balanced sha. If not zero, unbalanced
+		 */
+		int counter = 0;
 
-	    int dotCtr = 0;
-	    for (char c : operand.toCharArray()) {
-	        if (c == '.') dotCtr++;
-	        if (dotCtr > 1) {
-	            errorDetected = true;
-	            errorMsg = "Error: Too Many Decimal Points!";
-	            return operand;
-	        }
-	    }
-	    
-	    //Considering more cases:
-	    String integer = operand;
-	    String decimals = "";
+		for (int i = 0; i < infix.length(); i++) {
+		    char ch = infix.charAt(i);
 
-	    if (operand.contains(".")) {
-	        String[] s = operand.split("\\."); 
-	        integer = s[0];
-	        decimals = s.length > 1 ? s[1] : ""; //ternary operator learned from CMSC11
-	    }
+		    if (ch == '(') {
+		        counter++;
+		    }
+		    else if (ch == ')') {
+		        counter--;
 
-	    if (decimals.contains(",")) {
-	        errorDetected = true;
-	        errorMsg = "Error: Illegal Operand Format";
-	        return operand;
-	    }
+			    if (counter < 0) {
+			    	return error + "Unbalanced Parenthesis!";
+			    }
+		    }
+		}
+		
+		if (counter != 0) {
+			return error + "Unbalanced Parenthesis!";
+		}
+		
+	//2. Unknown Operators
+		
+		for (int i=0; i<infix.length(); i++) {
+			char holder = infix.charAt(i);
 
-	    if (integer.contains(",")) {
-	        if (integer.startsWith(",") || integer.endsWith(",")) {
-	            errorDetected = true;
-	            errorMsg = "Error: Illegal Operand Format";
-	            return operand;
-	        }
-
-	        String[] s2 = integer.split(",");
-
-	        if (s2[0].length() < 1 || s2[0].length() > 3) {
-	            errorDetected = true;
-	            errorMsg = "Error: Illegal Operand Format";
-	            return operand;
-	        }
-
-	        for (int i = 1; i < s2.length; i++) {
-	            if (s2[i].length() != 3) {
-	                errorDetected = true;
-	                errorMsg = "Error: Illegal Operand Format";
-	                return operand;
-	            }
-	        }
-	    }
-	    return operand.replace(",", "");
-	}
-}
+			if(!nums.contains(String.valueOf(holder)) && holder!= '(' && holder!= ')' && holder!= ' ') {
+				
+				if(operators.indexOf(holder)== -1) {
+					return error + "Unknown Operators!";
+				}
+			}
 	
+		}//endfor
+
+	//3. Missing Operands
+		
+		//need talaga yung StringBuilder dito dahil hindi tlaga siya by operand mag operate, itong naka comment yung original. 
+		//Try mo icomment yung may Stringbuilder tas itong original yung iimplement mo
+		
+		for(int i = 0; i<infix.length()-1; i++) {
+			
+			if(operators.contains(String.valueOf(infix.charAt(i))) && operators.contains(String.valueOf(infix.charAt(i + 1)))){
+				return error + "Missing Operands/s";
+			}
+		}
+		
+		for(int i = 0; i<operators.length(); i++) {		
+			char holder = operators.charAt(i);
+			if(infix.startsWith(String.valueOf(holder)) || infix.endsWith(String.valueOf(holder))) {
+				return error + "Missing Operands/s";
+			}
+		}
+	
+	//3. Math Errors
+		
+	//4. Error Handling for Illegal Use of Comma
+		int i = 0;
+		
+		while (i < infix.length()) {
+		    char ch = infix.charAt(i);
+
+		    if (nums.contains(String.valueOf(ch))) {
+		        String operand = buildOperand(infix, nums, i);
+
+		      //split integer and fractional part
+				String[] part = operand.split("\\.");
+				
+				/*
+				 tinry catch ko na lang to since nung tinry ko to:
+				 myconverter.setInfix("1(.)2+(2.5-3.567)*4.8901^2");
+				 
+				 hindi rin daw pwede to String integerPart = part[0]; 
+				 nag arrayindex out of bounds
+				 */
+				try {
+					String integerPart = part[0];
+					
+					//No comma is allowed
+					if(!integerPart.contains(",")) {
+						if (!integerPart.matches("\\d+")) {
+							return error + "Illegal Operand Format!";
+						}
+					} 
+					
+					//Split by commas
+					String[] integers = integerPart.split(",");
+					
+					//1-3 digits dapat yung first group
+					if(!integers[0].matches("\\d{1,3}")) {
+						return error + "Illegal Operand Format!";
+					}
+					
+					//remaining groups dapat exactly 3 digits
+					
+					for (int j = 1; j<integers.length; j++) {
+						if (!integers[j].matches("\\d{3}")) {
+							return error + "Illegal Operand Format!";
+						}
+					}
+
+			        i += operand.length(); //para the next i na gamitin natin will really move to the next operand, hindi lang basta sa next na character
+				}
+				catch(ArrayIndexOutOfBoundsException e) {
+					return error + "Illegal Operand Format!";
+				}
+				if (part.length > 1) { 
+				    String fracPart = part[1];
+				    if (!fracPart.matches("\\d*")) {
+				    	return error + "Illegal Operand Format!";
+				    }
+				}
+		    }
+		    else {
+		        i++;
+		    }
+		}
+		return "";
+	}
+
+	
+	
+}
