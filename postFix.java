@@ -3,7 +3,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.EmptyStackException;
 
-public class postFix {
+public class postFix { //1. Create a java class named postFix.
 
 	private Stack<Character> tokenContainer;
 	private String infix;
@@ -12,35 +12,54 @@ public class postFix {
 	private String errorMsg = "";
 	private static final String REGEX_FOR_OPERAND = "^(\\d+|\\d{1,3}(,\\d{3})+)(\\.\\d*)?$";
 	
-	public void setInfix(String infix) { 
-		this.infix = presetInfix(infix); //The presetInfix method will first validate the format of the infix argument, that means we check every operand, operator, and parentheses.
-	}
+	//2. setInfix() method which takes in a String.
+	public String setInfix(String infix) { 
+		
+		errorDetected = false;
+		errorMsg = "";
+		this.postfix = "";
 
-	public String getInfix() {
-		if(!errorDetected) return this.infix; //if it so happens that an error is detected, it will return the error message rather than get the infix.
+		errorMsg = errorChecking(infix); //Validates the format of infix.
+
+		if(errorMsg.equals("")) {
+			this.infix = infix;
+		} else {
+			errorDetected = true;
+		}
 		return errorMsg;
 	}
-
+	
+	//3. getInfix() method that returns a String.
+	public String getInfix() {
+		if(!errorDetected) return this.infix; 
+		return errorMsg;
+	}
+	
+	//4. infix2postfix() method for conversion.
 	public String infix2postfix(){
-
-		if(errorDetected) { //if setInfix fails, i.e., an error has been detected, this method will return an error message instead of doing its usual proceedings.
+		
+		//The numbering here is based on the given algorithm for conversion.
+		
+		if(errorDetected) { 
 			return "You can't invoke this method yet. Set your infix properly.";
 		}
 
-		tokenContainer = new Stack<>(); //We first initialize an empty stack.
+		tokenContainer = new Stack<>(); //1. Initialize an empty stack.
 		StringBuilder postfixBuilder = new StringBuilder();
 
-		List<String> tokens = tokenize(infix); //this list stores the operators, parentheses, and operands based on their proper grouping. Note that the format of each token here has been already validated prior the setting of the infix.
+		List<String> tokens = tokenize(infix); // Stores the grouped input token by the tokenize method.
 		if(errorDetected) return errorMsg;
 		int i = 0;
 		
-		while(!errorDetected && tokens.size() > i) { //While no error and not end of infix expression
+		while(!errorDetected && tokens.size() > i) { //2. While no error and not end of infix expression.
 
-			String token = tokens.get(i);
+			String token = tokens.get(i); //2.a. Get the next input token.
 			
+			//2.b.
+		
 			//Handling Operands
-			if (Character.isDigit(token.charAt(0)) || token.charAt(0) == '.') { //We check if first character of the token is a '.' or a digit, cause by then it will be an operand.
-				postfixBuilder.append(token).append(" "); //We add space every after operand for a clean format.
+			if (Character.isDigit(token.charAt(0)) || token.charAt(0) == '.') { 
+				postfixBuilder.append(token).append(" "); //Add space every after operand for a clean format.
 			}
 			
 			//Handling Parentheses
@@ -57,7 +76,7 @@ public class postFix {
 					tokenContainer.pop(); 
 				} else { 
 					errorDetected = true;
-					errorMsg = "Unbalanced Parentheses!"; //This error checking is for an edge case that if we did not find the '(' on top of the stack, it only means that the parentheses are unbalanced.
+					errorMsg = "Unbalanced Parentheses!"; //Error: no '(' on top of the stack.
 					return errorMsg;
 				}
 			}
@@ -79,14 +98,16 @@ public class postFix {
 		postfix = postfixBuilder.toString();
 		return "";
 	}
-
-	public String showPostfix() { //this will return an error message if the setInfix produces an error
+	
+	//5. showPostfix() method that returns the String of postfix expression.
+	public String showPostfix() {
 		if(errorDetected) {
 			return "You can't invoke this method yet. Set your infix properly."; 
 		}
 		return postfix;
 	}
-
+	
+	//6. evaluatepostfix() method that returns the double evaluated postfix expression.
 	public double evaluatepostfix() {
 
 		if(errorDetected) {
@@ -98,40 +119,40 @@ public class postFix {
 	    }
 		
 		Stack<Double> postContainer = new Stack<>(); //1. Initialize an empty stack
-		String[] tokens = postfix.trim().split("\\s+"); //We split the postfix expression using whitespace.
+		String[] tokens = postfix.trim().split("\\s+"); //Split postfix using whitespace.
 		
 		//2. Repeat the following until the end of the expression (l-r):
 		for (int i = 0; i < tokens.length; i++) {
 			String nextToken = tokens[i]; //(a) Get the next token(operand,operator) in the expression
 			
-			if(nextToken.length() ==1 & isOperator(nextToken.charAt(0))) { //(c) If the token is an operator: 
+			if(nextToken.length() ==1 & isOperator(nextToken.charAt(0))) { //If the token is an operator: 
 				
 				if (postContainer.size() < 2) {
 	                throw new RuntimeException("There are not enough operands to perform the operation.");
 	            }
-				//i. Pop two values from the stack
+				//Pop two values from the stack
 				double b = postContainer.pop();
 				double a = postContainer.pop();
-				//ii. Apply the operator to these two values, and iii. Push the resulting value back onto the stack.
+				//Apply the operator to these two values, and iii. Push the resulting value back onto the stack.
 				switch (nextToken) {
-				case "+": postContainer.push(a + b); break;
-				case "-": postContainer.push(a - b); break;
-				case "*": postContainer.push(a * b); break;
-				case "/":
-					if (b == 0) throw new ArithmeticException("Division by zero");
-					postContainer.push(a / b);
-					break;
-				case "%": postContainer.push(a % b); break;
-				case "^": 
-					validateOperation(a, b, "^");
-					postContainer.push(Math.pow(a, b));
-					break;
-				default:
-					throw new RuntimeException("Unknown operator: " + nextToken);
+					case "+": postContainer.push(a + b); break;
+					case "-": postContainer.push(a - b); break;
+					case "*": postContainer.push(a * b); break;
+					case "/":
+						if (b == 0) throw new ArithmeticException("Division by zero");
+						postContainer.push(a / b);
+						break;
+					case "%": postContainer.push(a % b); break;
+					case "^": 
+						validateOperation(a, b, "^");
+						postContainer.push(Math.pow(a, b));
+						break;
+					default:
+						throw new RuntimeException("Unknown operator: " + nextToken);
 				}
 			}
-			else {
-				double num = Double.parseDouble(nextToken.replace(",", ""));
+			else {//If the token is an operand, push it onto the stack.
+				double num = Double.parseDouble(nextToken.replace(",", "")); 
 				postContainer.push(num);
 			}		
 		}//endfor
@@ -139,27 +160,12 @@ public class postFix {
 		if(postContainer.size() != 1) {
 			throw new RuntimeException("Invalid postfix expression.");
 		} 
-		return postContainer.pop(); //(d) When the end of expression is encountered, its value is on top of the stack.
+		return postContainer.pop(); //When the end of expression is encountered, its value is on top of the stack.
 	}
 	
-	                                               //Helper Methods
+	//======================================Helper Methods======================================
 	
-	private String presetInfix(String infix) {
-		errorDetected = false;
-		errorMsg = "";
-		this.postfix = "";
-
-		errorMsg = errorChecking(infix);
-
-		if(errorMsg.equals("")) {
-			return infix;
-		} else {
-			errorDetected = true;
-		}
-		return errorMsg;
-	}
-	
-	private List<String> tokenize(String infix) {
+	private List<String> tokenize(String infix) { //Groups the infix into operator, operand, and parenthesis.
 		errorDetected = false;
 		errorMsg = "";
 
@@ -168,7 +174,7 @@ public class postFix {
 
 	    while (i < infix.length()) {
 	        char ch = infix.charAt(i);
-
+	        
 	        if (Character.isWhitespace(ch)) { //We ignore whitespace.
 	            i++;
 	            continue;
@@ -200,11 +206,13 @@ public class postFix {
 	        errorDetected = true;
 	        errorMsg = "Invalid character: " + ch;
 	        return tokens;
+	        
 	    }//end while
+	    
 	    return tokens;
+	    
 	}//end tokenize
 	
-	//A method for popping and displaying. So we can just call it instead of constantly repeating the code.
 	private void popThendisplay(StringBuilder postfixBuilder) {
 		try {
 			postfixBuilder.append(tokenContainer.pop()).append(" ");
@@ -234,7 +242,9 @@ public class postFix {
 				} else break;
 			}
 		}
+		
 		tokenContainer.push(nextInput);
+		
 	}//end handleOperators
 
 	private int precedenceChecker(Character ch){
@@ -276,23 +286,33 @@ public class postFix {
 		errorMsg = "";
 		String error = "Error: ";
 		
+		//Error Handling for when the infix starts/ends with an operator:
+		String [] operators = {"+", "-", "*", "/", "%", "^"};
+		
+		for(int i = 0; i<operators.length; i++) {
+			if(infix.startsWith(operators[i]) || infix.endsWith(operators[i])) {
+				return error + "Missing Operand/s!";
+			}
+		}
+		
 		//Error Handling for an Empty Input:
 		if (infix == null || infix.trim().isEmpty()) {
 			return "Error: Empty expression";
 		} 
 
-		//This is used for initial checking if the parenthesis are balanced. The final validation is in the infix2postfix() to check if the top of the stack is '('.
+		//Initial check if the parenthesis are balanced. 
+		
 		int counter = 0;
 		for (int i = 0; i < infix.length(); i++) {
 			char ch = infix.charAt(i);
 			if (ch == '(') counter++;
 			else if (ch == ')') counter--;
 
-			if (counter < 0) return error + "Unbalanced Parenthesis!"; //Since it will always be a non negative integer if it's balanced
+			if (counter < 0) return error + "Unbalanced Parenthesis!"; //non negative integer if it's balanced
 		}
 		if (counter != 0) return error + "Unbalanced Parenthesis!";
 
-		//Error Handling for Empty Parenthese w/o Space/s:
+		//Error Handling for Empty Parentheses w/o Space/s:
 		if(infix.contains("()")) {
 			return error + "Empty parentheses!";
 		}
