@@ -10,7 +10,7 @@ public class postFix {
 	private String postfix;
 	private boolean errorDetected = false;
 	private String errorMsg = "";
-	private static final String REGEX_FOR_OPERAND = "^(\\d+|\\d{1,3}(,\\d{3})+)(\\.\\d+)?$";
+	private static final String REGEX_FOR_OPERAND = "^(\\d+|\\d{1,3}(,\\d{3})+)(\\.\\d*)?$";
 	
 	public void setInfix(String infix) { 
 		this.infix = presetInfix(infix); //The presetInfix method will first validate the format of the infix argument, that means we check every operand, operator, and parentheses.
@@ -175,7 +175,7 @@ public class postFix {
 	        }
 	        
 	        //If we are dealing with an operand:
-	        if (Character.isDigit(ch)) { 
+	        if (Character.isDigit(ch)|| ch == '.') { 
 	            StringBuilder num = new StringBuilder();
 
 	            while (i < infix.length() && (Character.isDigit(infix.charAt(i)) ||
@@ -253,7 +253,7 @@ public class postFix {
 		return ch=='+'||ch=='-'||ch=='*'||ch=='/'||ch=='%'||ch=='^';
 	}
 
-	private boolean isDigitOrDot(char ch) {
+	private boolean isDigitDotOrComma(char ch) {
 		return (ch>='0'&&ch<='9')||ch=='.'||ch==',';
 	}
 	
@@ -288,7 +288,7 @@ public class postFix {
 			if (ch == '(') counter++;
 			else if (ch == ')') counter--;
 
-			if (counter < 0) return error + "Unbalanced Parenthesis!";
+			if (counter < 0) return error + "Unbalanced Parenthesis!"; //Since it will always be a non negative integer if it's balanced
 		}
 		if (counter != 0) return error + "Unbalanced Parenthesis!";
 
@@ -302,7 +302,7 @@ public class postFix {
 			char ch = infix.charAt(i);
 
 			if(!Character.isWhitespace(ch) &&
-			   !isDigitOrDot(ch) &&
+			   !isDigitDotOrComma(ch) &&
 			   !isOperator(ch) &&
 			   ch!='(' && ch!=')') {
 
@@ -348,8 +348,8 @@ public class postFix {
 			char b=infix.charAt(i+1);
 
 			if((a==')'&&b=='(')||
-			   (isDigitOrDot(a)&&b=='(')||
-			   (a==')'&&isDigitOrDot(b))){
+			   (isDigitDotOrComma(a)&&b=='(')||
+			   (a==')'&&isDigitDotOrComma(b))){
 				return error+"Implicit multiplication not allowed!";
 			}
 		}
